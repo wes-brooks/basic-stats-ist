@@ -1,0 +1,344 @@
+---
+title: Basic statistics in R (part 1)
+author: Wesley Brooks
+date: 11 Feb 2021
+---
+
+# Introduction
+This is the section where I describe the basic contents and purpose of the workshop.
+
+
+## Packages
+If you've ever worked with R, it is likely that you have used *packages*. The package system is what makes R such an incredible language, because it allows anyone to extend the functionality of the language by creating a self-contained module that anybody can load and use in their R session.
+
+Today, I am going to ask you to install and load a few new packages.
+
+```
+install.packages( "remotes" )
+```
+
+Not all packages are on CRAN. It's becoming more common for packages to be shared as repostiories on Github, and so there are some tools that make it simple to install packages that are hosted in this fashion. The `fosdata` package contains 49 datasets that were drawn from open-access journal articles. Here we'll install it from Github, using the `remotes` package. 
+```
+remotes::install_github( "speegled/fosdata" )
+library( "fosdata" )
+```
+
+You can glance at all of the datasets stored in `fosdata`, or zoom in on one:
+```{r}
+data( package="fosdata" )
+library( 'fosdata' )
+
+?fosdata::wrist
+data( "wrist" )
+
+View( wrist )
+
+```
+
+
+
+# Probability
+One might reasonably think of statistics as applied probability. So we need to be familiar with a bit f probability theory. 
+
+## Random variables and calculations:
+A random variable is our name for some quantity that follows a random distribution. Examples:
+
+```{r}
+# X is a random variable, it follows the sandard normal distribution
+X = rnorm(1)
+
+# Once we have "realized" a value of X, it is data and no longer random.
+X
+```
+
+
+### Mean and median
+There are a few kinds of average that are commonly used in practical settings and we will use two of them extensively. The mean is the average you're probably used to, calculated by summing up the values and then dividing by the number of values. The median is the midpoint of the data - it's the number you arrive at if you write down all the values in order and then find the halfway point. There are special R functions for both of these.
+
+```{r}
+x = rnorm(10)
+mean(x)
+median(x)
+```
+
+### Expectation
+Expectation is the mean of a population. So, a random variable has an expectation but data has a mean. There's no R function to calculate an expectation because R expects to be working on data rather than on a population. If you think of R as a calculator, you can calculate the mean of any numbers that you can type into the calculator, but when the object is this abstract thing we call a distribution, the calculator can't proceed.
+
+### Variance
+Our concept of variance comes about because of the need for a calculation that measures the typical difference between data points. In fact, we call that typical distance the *standard deviation*, and it is the square root of the variance. The formulas are 
+
+$$\text{var}(x) = (n-1)^{-1} \sum_{i=1}^n (x_i - \bar{x})^2$$
+
+$$ \text{sd}(x) = \sqrt{ \text{var}(x) } $$
+
+### Some identities
+
+
+## Some distributions
+
+### Normal distribution
+The Normal distribution is very commonly encountered in statistics, and plays a very special role. It's the typical "bell-curve", and is characterized by a mean $\mu$ and standard deviation $\sigma$ (variance is therefore $\sigma^2$). We statisticians tend to abbreviate this Normal distribution by $N(\mu, \sigma^2)$. There is a special distribution where the mean is zero and the standard deviation is one, which we call the **standard Normal** distribution or $N(0, 1)$.
+
+#### Distribution function
+I have referred to a distribution without defining what that is. A distribution is a measure of how probability is distributed among events. We also use the term to mean a particular function, called the "distribution function", which calculates the probability that a random variable is less than or equal to some number. Or, $F_X(t) = Pr(X \le t)$. In more concrete terms, we can do the calculation in R:
+
+```{r}
+# Demonstrate the standard normal distribution function:
+pnorm(0)
+pnorm(-1)
+pnorm(1)
+
+# draw the standard normal distribution function, with some annotations
+t = seq(-4, 4, length.out=1001)
+plot( x=t, y=pnorm(t), bty='n', type='line', main="standard normal distribution function")
+
+# annotate the plot with lines indicating the quantiles for a 95% probability interval
+lines(x=c(min(t), qnorm(0.025)), y=rep(0.025, 2), lty=2)
+lines(x=c(min(t), qnorm(0.975)), y=rep(0.975, 2), lty=2)
+
+lines(x=rep(qnorm(0.025), 2), y=c(0, 0.025), lty=3)
+lines(x=rep(qnorm(0.975), 2), y=c(0, 0.975), lty=3)
+```
+
+You can also see some non-normal distribution functions, in order to see the differences:
+```{r}
+plot( x=t, y=ppois(t, lambda=1), bty='n', type='line', main="Poisson(1) distribution function")
+plot( x=t, y=pchisq(t, df=2), bty='n', type='line', main="Chi-squared (df=7) distribution function")
+```
+
+#### Density function
+You might be surprised that the distribution function isn't the famous "bell curve", but that is the **probability density function**. Density here may be thought of as being like densiy of mass. And because it is probability density, it must add up to one in the end. Density of a standard normal distribution is calculated by the `dnorm` function, and is the rate of change of the distribution function. Here I've shaded area under the standard normal density that adds up to 0.05, or 5%. Thus, the unshaded area under the curve is 0.95. In other words, a standard normal random variable has its value 95% of the time between -1.96 and 1.96.
+
+```{r}
+# Demonstrate the standard normal density function:
+dnorm(0)
+dnorm(-1)
+dnorm(1)
+
+# plot the standard normal density function with some annotations
+t = seq(-3, 3, length.out=1001)
+plot( x=t, y=dnorm(t), bty='n', type='l', main="standard normal density")
+
+# annotate the density function with the 5% probability mass tails
+polygon(x=c(t[t<=qnorm(0.025)], qnorm(0.025), min(t)), y=c(dnorm(t[t<=qnorm(0.025)]), 0, 0), col=grey(0.8))
+
+polygon(x=c(t[t>=qnorm(0.975)], max(t), qnorm(0.975)), y=c(dnorm(t[t>=qnorm(0.975)]), 0, 0), col=grey(0.8))
+
+```
+
+Again, the density function exists for other distributions than the normal.
+```{r}
+# plot the poisson and chi-squared probability densities
+plot( x=t, y=dunif(t), bty='n', type='l', main="Uniform(0, 1) distribution function")
+plot( x=t, y=dchisq(t, df=2), bty='n', type='l', main="Chi-squared (df=7) distribution function")
+```
+
+#### Quantile function
+There is one more commonly used function of a distribution: its quantile function. This is an inverse of the distribution function: it maps from the 0-1 range back to the possible values of the distribution. This becomes useful for answering questions like, "what is the cutoff that a standard normal random variable falls below 95% of the time?"
+
+```{r}
+# demonstrate quantiles of the standard normal distribution
+qnorm(0.95)
+qnorm(0.5)
+
+# if you want an interval that contains the random variable 95% of the time, you may divide the remaining 5% in half, so the interval is in the center:
+(1 - 0.95) / 2
+qnorm(0.025)
+qnorm(0.975)
+```
+
+
+
+# Mathematical statistics
+
+### Identities
+For random variables X and Y that are independent,
+ - $E(aX) = aE(X)$
+ - $E(X + Y) = E(X) + E(Y)$
+ - $var(aX) = a^2 var(X)$
+ - $var(X + Y) = var(X) + var(Y)$
+
+```{r}
+X = function(n=10, mean=-3, sd=3) { rnorm(n, mean=mean, sd=sd) }
+Y = function(n=10, mean=10, sd=2) { rnorm(n, mean=mean, sd=sd) }
+
+mean( X() )
+mean( Y() )
+
+var( X() )
+var( Y() )
+
+var( 2*X() )
+var( X() + 0.5*Y() )
+```
+
+
+### Law of large numbers
+The law of large numbers says that if the individual measurements are independent, then the mean of a sample tends toward the mean of the population as the sample size gets larger.
+
+```{r}
+nn = c(1, 2, 4, 8, 12, 20, 33, 45, 66, 100)
+means = sapply( nn, function(n) mean( rnorm(n) ) )
+plot(nn, means, bty='n', ylab = "sample mean")
+abline(h=0, lty=2)
+```
+
+
+### Central limit theorem
+The most important mathematical result in statistics, the Central Limit Theorem says that if you take (almost) any sample of random numbers and calculate its mean, the distribution of the mean tends toward a normal distribution. We illustrate the "tending toward" with an arrow and it indicates that the distribution of a sample mean is only *approximately* Normal. But if the samples were from a Normal distribution then the sample mean has an *exactly* Normal distribution.
+
+$$ \bar{X} \rightarrow N(\mu, \frac{\sigma^2}{n}) $$
+And because of the identities we learned before, you can write this as 
+$$\frac{\bar{X} - \mu}{\sigma/\sqrt{n}} \rightarrow N(0, 1) $$
+
+In fact, the This is significant because we can use the standard normal functions on the right, and the data on the left, to start answering questions like, "what is the 95% confidence interval for the population mean?" 
+
+#### But isn't $\sigma$ unknown, too?
+I've presented calculations that use the parameter $\sigma$. But in reality, $\sigma$ is just as unknown as $\mu$. Is it safe to replace $\sigma$ in the calculations by the standard deviation that we calculate from the sample using the `sd()` function? Not quite. If the $S$, the sample standard deviation (this is what you get from R's `sd()` function) is used for $\sigma$ in the CLT, then the distribution will be slightly less clustered at the central point. This distribution with slightly heavier tails gets called the "t-distribution", and its discovery was a triumph of early modern statistics. 
+
+$$\frac{\bar{X} - \mu}{S/\sqrt{n}} \rightarrow t_{n-1} $$
+
+```{r}
+# plot the densities of a standard normal distribution, and of a t-distribution with five degrees of freedom:
+
+plot( x=t, y=dnorm(t), ylim=c(0, 0.5), bty='n', lty=2, type='l', ylab="density" )
+par( new=TRUE )
+plot( x=t, y=dt(t, df=5), ylim=c(0, 0.5), xaxt='n', yaxt='n', xlab='', ylab='', bty='n', col='red', type='l' )
+```
+
+Once again, if the original samples were from a Normal distribution, then the distribution of the mean is exactly a $t$ distribution, but otherwie the $t$ distribution is an approximation that gets better as the sample size increases.
+
+What's more important than memorizing the precise formula is to remember that for (almost) any data where the samples are independent, the mean comes from some distribution that is more and more like the Normal distribution as the sample size increases. Let's take a look at an example using the uniform distribution.
+
+```{r}
+# generate 20 samples from a uniform distribution and plot their histogram
+N = 20
+u = runif( N )
+hist( u )
+
+# generate 100 repeated samples of the same size, calculate the mean of each one, and plot the histogram of the means.
+B = 100
+uu = numeric( B )
+for ( i in 1:B ) {
+  uu[[i]] = mean( runif(N) )
+}
+
+hist(uu)
+
+# what happens as B and N get larger and smaller? Do they play different roles?
+```
+
+# Inference
+
+Inference means making statements about the population based on a sample. In one simple case, inference can mean using a sample to estimate the mean of the population from which it arose. Since the law of large numbers says that the sample mean tends to the population mean, we'll use the sample mean to approximate the population mean. You've already seen this in the plots where I showed the sample mean getting closer to the population mean as the sample size increased.
+
+## Revisiting the standard normal distribution:
+The distribution, density, and quantile functions are all about the population. When you're working with data, the graphs won't be as clean. When you're using methods that depend upon the data being approximately normal, you'll have to check some diagnostics. One simple but effective approach is to look at the histogram and QQ plot, and judge whether there is obvious non-normality. Here's an example from the standard normal distribution:
+
+```{r}
+# sample 50 numbers from the standard normal distribution
+y = rnorm(50)
+
+# look at the histogram - it's like the density function
+hist(y)
+
+# look at the empirical distribution function - it's like the distribution function
+plot( ecdf(y) )
+
+# look at the QQ plot - it demonstrates how closely the distribution matches the quantiles of a Normal distribution.
+qqnorm(y)
+```
+
+
+## Looking at real data
+
+### Normal data: using the t-distribution
+
+In the `fosdata` package there is a dataset called `mice_pot`, which contains data from an experiment where mice were dosed with THC and then measured for motor activity as a percentage of their baseline activity. We are going to look at the group that got a medium dose of THC.
+
+```{r}
+# import the fosdata package and the mice_pot data
+library( 'fosdata' )
+data( mice_pot )
+
+# extract just the mice that got the medium dose of THC
+mice_med = mice_pot[ mice_pot$group == 1, ]
+
+# look at the histogram and QQ plot to assess whether the data are approximately normal
+hist( mice_med$percent_of_act )
+qqnorm( mice_med$percent_of_act )
+```
+
+#### Find the 80% confidence interval for the population mean
+
+Now we are using our sample to make some determination about the population, so this is statistical inference. Our best guess of the population mean is the sample mean, `mean( mice_med$percent_of_act )`, which is 99.1%. But to get a confidence interval, we need to use the formula
+$$ \bar{x} \pm t_{n-1, 0.1} * S / \sqrt{n} $$
+Going piece-by-piece in this formula:
+
+```{r}
+# calculate the sample mean, sample standard deviation, and sample size:
+x_bar = mean( mice_med$percent_of_act )
+s = sd( mice_med$percent_of_act )
+n = nrow( mice_med )
+
+# calculate the relevant quantiles of the t-distribution.
+# use the 0.1 and 0.9 quantiles because we want the 80% confidence interval
+# and (1-0.8) / 2 = 0.1 and 1 - 0.1 = 0.9.
+t_low = qt(0.1, df=n-1)
+t_high = qt(0.9, df=n-1)
+
+# calculate the confidence interval:
+cat( "The 80% CI is (", x_bar + t_low * s / sqrt(n), ", ", x_bar + t_high * s / sqrt(n), ").")
+
+# check your calculation with the t.test function:
+t.test( mice_med$percent_of_act, conf.level=0.8 )
+
+```
+
+### Non-normal data: resampling
+
+In the `fosdata` package, there is a dataset called `barnacles` that is from a study where scientists counted the number of barnacles on rocks in the intertidal zone. We'll import the data and look at its distribution:
+
+```{r}
+# import the fosdata package and the barnacles data
+library( 'fosdata' )
+data( barnacles )
+
+# calculate the number of barnacles per unit area for each sample:
+barnacles$per_m = barnacles$count / barnacles$area_m
+
+# examine the histogram and QQ plot of the barnacles per unit area:
+hist( barnacles$per_m, main="barnacles per square meter" )
+qqnorm( barnacles$per_m )
+
+# does it look to you like the barnacles per unit area are distributed like a normal distribution?
+```
+
+We should conclude that the data are obviously non-normal.
+
+#### Bootstrap-t distribution:
+In this case, the observations themselves are not normally distributed so the t-distribution derived from the CLT will be only an approximation. But there is another option: resampling. This means shuffling our original data to generate new values of the t-statistic, and then working directly from this "bootstrap-t" distribution for inferences. Here is the procedure for generating your bootstrap-t distribution:
+
+ 1. Compute the sample mean $\bar{x}$.
+ 2. Repeat the following many times:
+  - Resample from the barnacle data with replacement, calling the resample `z`.
+  - Calculate the t-statistic (centered at $\bar{x}$) for this resample and call it `t_boot[[i]]`. The formula is `( mean(z) - mean(barnacles$per_m) ) / ( sd(z) / sqrt(n) )`.
+
+```{r}
+# define the sample size and a 
+B = 200
+t_boot = numeric( B )
+
+for (i in 1:B) {
+  z = sample( barnacles$per_m, replace=TRUE )
+  t_boot[[i]] = ( mean(z) - mean(barnacles$per_m) ) / ( sd(z) / sqrt(length(z)) )
+}
+
+hist(t_boot)
+```
+
+## Links
+If there is an interactive component (Jupyter, Etherpad, Binder, etc) then put the link(s) here.
+
+## Background
+A bit more depth than the introduction, and describe the data used and software required, as well as where to download it all.
