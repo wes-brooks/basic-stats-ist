@@ -4,7 +4,7 @@ author: [Dr. Wesley Brooks]
 output:
    rmdformats::readthedown
 date: "2021-03-02"
-url: "https://ucdavisdatalab.github.io/basic-stats-ist/"
+url: "https://wes-brooks.github.io/basic-stats-ist/"
 github-repo: wes-brooks/basic-stats-ist
 site: bookdown::bookdown_site
 knit: "bookdown::render_book"
